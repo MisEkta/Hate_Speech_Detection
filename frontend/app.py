@@ -1,11 +1,16 @@
 import streamlit as st
-import requests
 from datetime import datetime
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 import io
 import time
+
+# Import page modules
+from pages.text_analysis import render_text_analysis
+from pages.audio_analysis import render_audio_analysis
+from pages.history import render_history
+from api_client import check_api_health, analyze_text_api
 
 # --- Page config and CSS ---
 st.set_page_config(
@@ -100,12 +105,7 @@ with st.sidebar:
             value="http://localhost:8000",
             help="Enter the base URL of your hate speech detection API"
         )
-        api_status = False
-        try:
-            response = requests.get(f"{API_BASE_URL}/health")
-            api_status = response.status_code == 200
-        except:
-            api_status = False
+        api_status = check_api_health(API_BASE_URL)
         if api_status:
             st.success("🟢 API Connected")
         else:
@@ -113,13 +113,16 @@ with st.sidebar:
             st.warning("Please ensure your API server is running")
 
     # Analysis Settings only for analysis pages
-    # Define checkboxes ONCE here and use their values in the main logic
     if page == "Text Analysis" or page == "Audio Analysis":
         with st.expander("⚙️ Analysis Settings", expanded=False):
             include_policies = st.checkbox("📋 Include Policy Retrieval", value=True, key="text_policy1")
             include_reasoning = st.checkbox("🧠 Include AI Reasoning", value=True, key="text_reasoning1")
             auto_analyze = st.checkbox("⚡ Auto-analyze on input", value=False, key="text_auto1")
-    
+    else:
+        include_policies = True
+        include_reasoning = True
+        auto_analyze = False
+
     # History controls only for history page
     if page == "History":
         with st.expander("📊 History Controls", expanded=False):
@@ -128,13 +131,6 @@ with st.sidebar:
                 st.experimental_rerun()
             if st.session_state.analysis_history:
                 st.write(f"Total analyses: {len(st.session_state.analysis_history)}")
-
-def check_api_health():
-    try:
-        response = requests.get(f"{API_BASE_URL}/health")
-        return response.status_code == 200
-    except:
-        return False
 
 def get_classification_style(label: str) -> str:
     if label.lower() in ['safe', 'not hate speech']:
@@ -173,40 +169,6 @@ def create_confidence_chart(classification_data):
         return fig
     return None
 
-def analyze_text(text, include_policies, include_reasoning):
-    try:
-        payload = {
-            "text": text,
-            "include_policies": include_policies,
-            "include_reasoning": include_reasoning
-        }
-        response = requests.post(f"{API_BASE_URL}/analyze", json=payload)
-        if response.status_code == 200:
-            return {"success": True, "data": response.json()}
-        else:
-            return {"success": False, "error": f"API Error: {response.status_code}"}
-    except requests.exceptions.RequestException as e:
-        return {"success": False, "error": f"Connection Error: {str(e)}"}
-    except Exception as e:
-        return {"success": False, "error": f"Unexpected Error: {str(e)}"}
-
-def analyze_audio(audio_bytes, include_policies, include_reasoning):
-    try:
-        files = {"file": audio_bytes}
-        params = {
-            "include_policies": str(include_policies).lower(),
-            "include_reasoning": str(include_reasoning).lower()
-        }
-        response = requests.post(f"{API_BASE_URL}/analyze_audio", files=files, params=params)
-        if response.status_code == 200:
-            return {"success": True, "data": response.json()}
-        else:
-            return {"success": False, "error": f"API Error: {response.status_code}"}
-    except requests.exceptions.RequestException as e:
-        return {"success": False, "error": f"Connection Error: {str(e)}"}
-    except Exception as e:
-        return {"success": False, "error": f"Unexpected Error: {str(e)}"}
-
 # --- Main Header ---
 st.markdown("""
 <div class="main-header">
@@ -215,252 +177,17 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# # --- API Status ---
-# api_status = check_api_health()
-# if api_status:
-#     st.sidebar.success("🟢 API Connected")
-# else:
-#     st.sidebar.error("🔴 API Disconnected")
-#     st.sidebar.warning("Please ensure your API server is running")
-
-# --- Page 1: Text Analysis ---
+# --- Page Routing ---
 if page == "Text Analysis":
-    st.header("📝 Text Analysis")
-    # include_policies = st.sidebar.checkbox("📋 Include Policy Retrieval", value=True, key="text_policy2")
-    # include_reasoning = st.sidebar.checkbox("🧠 Include AI Reasoning", value=True, key="text_reasoning2")
-    # auto_analyze = st.sidebar.checkbox("⚡ Auto-analyze on input", value=False, key="text_auto2")
-
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        text_input = st.text_area(
-            "Enter text to analyze:",
-            height=150,
-            placeholder="Type or paste the text you want to analyze for hate speech...",
-            help="Enter any text content for analysis. The system will classify it and provide detailed insights."
-        )
-        analyze_button = st.button("🔍 Analyze Text", type="primary", disabled=not api_status)
-        if auto_analyze and text_input and len(text_input.strip()) > 10:
-            analyze_button = True
-            time.sleep(0.5)
-    with col2:
-        st.header("📈 Quick Stats")
-        if st.session_state.analysis_history:
-            total_analyses = len(st.session_state.analysis_history)
-            hate_count = sum(1 for item in st.session_state.analysis_history 
-                            if 'hate' in item.get('classification', {}).get('label', '').lower())
-            safe_count = sum(1 for item in st.session_state.analysis_history 
-                            if 'safe' in item.get('classification', {}).get('label', '').lower())
-            st.metric("Total Analyses", total_analyses)
-            st.metric("Hate Speech Detected", hate_count, delta=f"{hate_count/total_analyses*100:.1f}%")
-            st.metric("Safe Content", safe_count, delta=f"{safe_count/total_analyses*100:.1f}%")
-        else:
-            st.info("No analysis history yet. Start by analyzing some text!")
-
-    if analyze_button and text_input and api_status:
-        with st.spinner("🔄 Analyzing text..."):
-            result = analyze_text(text_input, include_policies, include_reasoning)
-        if result["success"]:
-            data = result["data"]
-            st.session_state.analysis_history.append({
-                "text": text_input[:100] + "..." if len(text_input) > 100 else text_input,
-                "timestamp": datetime.now().isoformat(),
-                "classification": data["classification"]
-            })
-            st.header("🎯 Analysis Results")
-            classification = data["classification"]
-            label = classification.get("label", "Unknown")
-            confidence = classification.get("confidence", 0)
-            style_class = get_classification_style(label)
-            st.markdown(f"""
-            <div class="{style_class}">
-                <h3>Classification: {label}</h3>
-                <p>Confidence: {confidence:.1%}</p>
-            </div>
-            """, unsafe_allow_html=True)
-            confidence_chart = create_confidence_chart(classification)
-            if confidence_chart:
-                col1, col2, col3 = st.columns([1, 2, 1])
-                with col2:
-                    st.plotly_chart(confidence_chart, use_container_width=True)
-            if "details" in classification:
-                with st.expander("📋 Classification Details"):
-                    st.json(classification["details"])
-            if "retrieved_policies" in data and data["retrieved_policies"]:
-                st.header("📚 Relevant Policies")
-                for i, policy in enumerate(data["retrieved_policies"], 1):
-                    with st.expander(f"Policy {i}: {policy.get('title', 'Untitled')}"):
-                        st.markdown(f"""
-                        <div class="policy-card">
-                            <strong>Content:</strong><br>
-                            {policy.get('content', 'No content available')}
-                            <br><br>
-                            <strong>Relevance Score:</strong> {policy.get('score', 'N/A')}
-                        </div>
-                        """, unsafe_allow_html=True)
-            if "reasoning" in data and data["reasoning"]:
-                st.header("🧠 AI Reasoning")
-                st.markdown(f"""
-                <div class="reasoning-box">
-                    {data["reasoning"]}
-                </div>
-                """, unsafe_allow_html=True)
-            if "recommended_action" in data and data["recommended_action"]:
-                st.header("⚡ Recommended Actions")
-                action_data = data["recommended_action"]
-                st.markdown(f"""
-                <div class="action-box">
-                    <strong>Action:</strong> {action_data.get('action', 'No action specified')}<br>
-                    <strong>Severity:</strong> {action_data.get('severity', 'Unknown')}<br>
-                    <strong>Confidence:</strong> {action_data.get('confidence', 0):.1%}
-                </div>
-                """, unsafe_allow_html=True)
-                if "details" in action_data:
-                    with st.expander("Action Details"):
-                        st.write(action_data["details"])
-            with st.expander("ℹ️ Analysis Metadata"):
-                st.write(f"**Timestamp:** {data['timestamp']}")
-                st.write(f"**Text Length:** {len(text_input)} characters")
-                st.write(f"**Policies Retrieved:** {'Yes' if include_policies else 'No'}")
-                st.write(f"**Reasoning Generated:** {'Yes' if include_reasoning else 'No'}")
-        else:
-            st.error(f"❌ Analysis failed: {result['error']}")
-    elif analyze_button and not text_input:
-        st.warning("⚠️ Please enter some text to analyze")
-    elif analyze_button and not api_status:
-        st.error("❌ Cannot analyze: API is not connected")
-
-# --- Page 2: Audio Analysis ---
+    render_text_analysis(
+        api_status, include_policies, include_reasoning, auto_analyze,
+        analyze_text_api,  # Pass the function, not a string
+        API_BASE_URL, get_classification_style, create_confidence_chart
+    )
 elif page == "Audio Analysis":
-    st.header("🎤 Audio Analysis")
-    st.info("Audio analysis is currently disabled.")
-    # include_policies = st.sidebar.checkbox("📋 Include Policy Retrieval", value=True, key="audio_policy")
-    # include_reasoning = st.sidebar.checkbox("🧠 Include AI Reasoning", value=True, key="audio_reasoning")
-    # st.info("Upload a WAV or MP3 audio file to transcribe and analyze for hate speech.")
-    # audio_file = st.file_uploader("Upload Audio File", type=["wav", "mp3"])
-    # analyze_audio_button = st.button("🔍 Analyze Audio", disabled=not (api_status and audio_file))
-    # if analyze_audio_button and audio_file and api_status:
-    #     with st.spinner("🔄 Transcribing and analyzing audio..."):
-    #         audio_bytes = audio_file.read()
-    #         result = analyze_audio(("audio." + audio_file.type.split('/')[-1], audio_bytes), include_policies, include_reasoning)
-    #     if result["success"]:
-    #         data = result["data"]
-    #         st.session_state.analysis_history.append({
-    #             "text": data.get("transcription", "[Audio transcription]"),
-    #             "timestamp": datetime.now().isoformat(),
-    #             "classification": data["classification"]
-    #         })
-    #         st.header("🎯 Analysis Results")
-    #         classification = data["classification"]
-    #         label = classification.get("label", "Unknown")
-    #         confidence = classification.get("confidence", 0)
-    #         style_class = get_classification_style(label)
-    #         st.markdown(f"""
-    #         <div class="{style_class}">
-    #             <h3>Classification: {label}</h3>
-    #             <p>Confidence: {confidence:.1%}</p>
-    #         </div>
-    #         """, unsafe_allow_html=True)
-    #         confidence_chart = create_confidence_chart(classification)
-    #         if confidence_chart:
-    #             col1, col2, col3 = st.columns([1, 2, 1])
-    #             with col2:
-    #                 st.plotly_chart(confidence_chart, use_container_width=True)
-    #         if "transcription" in data:
-    #             with st.expander("📝 Transcription"):
-    #                 st.write(data["transcription"])
-    #         if "details" in classification:
-    #             with st.expander("📋 Classification Details"):
-    #                 st.json(classification["details"])
-    #         if "retrieved_policies" in data and data["retrieved_policies"]:
-    #             st.header("📚 Relevant Policies")
-    #             for i, policy in enumerate(data["retrieved_policies"], 1):
-    #                 with st.expander(f"Policy {i}: {policy.get('title', 'Untitled')}"):
-    #                     st.markdown(f"""
-    #                     <div class="policy-card">
-    #                         <strong>Content:</strong><br>
-    #                         {policy.get('content', 'No content available')}
-    #                         <br><br>
-    #                         <strong>Relevance Score:</strong> {policy.get('score', 'N/A')}
-    #                     </div>
-    #                     """, unsafe_allow_html=True)
-    #         if "reasoning" in data and data["reasoning"]:
-    #             st.header("🧠 AI Reasoning")
-    #             st.markdown(f"""
-    #             <div class="reasoning-box">
-    #                 {data["reasoning"]}
-    #             </div>
-    #             """, unsafe_allow_html=True)
-    #         if "recommended_action" in data and data["recommended_action"]:
-    #             st.header("⚡ Recommended Actions")
-    #             action_data = data["recommended_action"]
-    #             st.markdown(f"""
-    #             <div class="action-box">
-    #                 <strong>Action:</strong> {action_data.get('action', 'No action specified')}<br>
-    #                 <strong>Severity:</strong> {action_data.get('severity', 'Unknown')}<br>
-    #                 <strong>Confidence:</strong> {action_data.get('confidence', 0):.1%}
-    #             </div>
-    #             """, unsafe_allow_html=True)
-    #             if "details" in action_data:
-    #                 with st.expander("Action Details"):
-    #                     st.write(action_data["details"])
-    #         with st.expander("ℹ️ Analysis Metadata"):
-    #             st.write(f"**Timestamp:** {data['timestamp']}")
-    #             st.write(f"**Audio Filename:** {audio_file.name}")
-    #             st.write(f"**Policies Retrieved:** {'Yes' if include_policies else 'No'}")
-    #             st.write(f"**Reasoning Generated:** {'Yes' if include_reasoning else 'No'}")
-    #     else:
-    #         st.error(f"❌ Analysis failed: {result['error']}")
-    # elif analyze_audio_button and not audio_file:
-    #     st.warning("⚠️ Please upload an audio file to analyze")
-    # elif analyze_audio_button and not api_status:
-    #     st.error("❌ Cannot analyze: API is not connected")
-
-# --- Page 3: History ---
+    render_audio_analysis()
 elif page == "History":
-    st.header("📊 Analysis History")
-    if st.session_state.analysis_history:
-        labels = [item['classification'].get('label', 'Unknown') for item in st.session_state.analysis_history]
-        label_counts = {}
-        for label in labels:
-            label_counts[label] = label_counts.get(label, 0) + 1
-        if label_counts:
-            fig = px.pie(
-                values=list(label_counts.values()),
-                names=list(label_counts.keys()),
-                title="Classification Distribution"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        df = pd.DataFrame([
-            {
-                "Timestamp": item["timestamp"],
-                "Text": item["text"],
-                "Classification": item["classification"].get("label", "Unknown"),
-                "Confidence": item["classification"].get("confidence", 0)
-            }
-            for item in st.session_state.analysis_history
-        ])
-        csv_buffer = io.StringIO()
-        df.to_csv(csv_buffer, index=False)
-        st.download_button(
-            label="⬇️ Download Analysis History as CSV",
-            data=csv_buffer.getvalue(),
-            file_name="analysis_history.csv",
-            mime="text/csv"
-        )
-        if st.button("🗑️ Clear History", key="History"):
-            st.session_state.analysis_history = []
-            st.experimental_rerun()
-        with st.expander("📜 Detailed History"):
-            for i, item in enumerate(reversed(st.session_state.analysis_history[-10:]), 1):
-                st.markdown(f"""
-                **Analysis {i}** - {datetime.fromisoformat(item['timestamp']).strftime('%Y-%m-%d %H:%M:%S')}
-                - **Text:** {item['text']}
-                - **Classification:** {item['classification'].get('label', 'Unknown')}
-                - **Confidence:** {item['classification'].get('confidence', 0):.1%}
-                ---
-                """)
-    else:
-        st.info("No analysis history yet. Analyze some text or audio to get started!")
+    render_history()
 
 # --- Footer ---
 st.markdown("---")
