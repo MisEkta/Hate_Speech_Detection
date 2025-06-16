@@ -1,0 +1,17 @@
+# Google Content Policy on Hate Speech
+
+Google prohibits content that promotes hatred against individuals or groups based on attributes such as race, ethnicity, religion, disability, age, nationality, veteran status, sexual orientation, gender, gender identity, or other characteristics associated with systemic discrimination.
+
+Content that incites violence or hatred against individuals or groups based on the attributes noted above is not allowed on Google platforms.
+
+Educational, documentary, scientific, or artistic content that uses offensive terms in an appropriate context may be allowed, but must clearly demonstrate context in the content itself.
+
+Google may restrict access to content in accordance with local laws, customs, and sensitivities.
+
+Content containing offensive religious criticism that also includes incitement to violence will be removed.
+
+Stereotypes that promote hatred, harass, intimidate, or incite violence against a person or group based on protected attributes are prohibited.
+
+Conspiracy theories that justify or promote hatred or violence against a protected group are not allowed.
+
+Developers using Google APIs must also comply with these policies and may not use our services to promote hatred.

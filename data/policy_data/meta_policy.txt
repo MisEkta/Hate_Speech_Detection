@@ -1,0 +1,21 @@
+# Meta (Facebook) Community Standards on Hate Speech
+
+Meta is committed to creating a safe and inclusive environment for all users. As part of this commitment, Meta strictly prohibits hate speech on its platforms, including Facebook and Instagram. Hate speech is defined as any direct attack against people based on their protected characteristics. These characteristics include, but are not limited to: race, ethnicity, national origin, religious affiliation, sexual orientation, sex, gender, gender identity, caste, disability, or serious disease.
+
+A "direct attack" is interpreted broadly and includes violent or dehumanizing speech, harmful stereotypes, statements of inferiority, expressions of contempt, disgust, or dismissal, cursing, and calls for exclusion or segregation. Meta considers both explicit and implicit language, as well as imagery, memes, and other forms of content that may reinforce negative stereotypes or use slurs, as potential hate speech.
+
+Meta’s policy is structured into three tiers, each reflecting the severity of the violation:
+
+- **Tier 1 (Most Severe):** Content that calls for or condones violence, serious harm, or dehumanization of individuals or groups based on protected characteristics. This includes statements advocating for genocide, physical harm, or exclusion from society.
+- **Tier 2:** Content that makes generalizations about inferiority, deficiency, or negative attributes of a group, such as claims that a group is less intelligent, less capable, or otherwise inferior.
+- **Tier 3:** Content that calls for exclusion, segregation, or social ostracism of individuals or groups based on protected characteristics, even if not accompanied by explicit threats or dehumanizing language.
+
+Meta also prohibits the use of slurs, epithets, or other language intended to degrade or insult individuals or groups based on protected characteristics. This includes the use of such language in memes, images, or other creative content, even if presented in a satirical or humorous context, if the effect is to reinforce harmful stereotypes or promote hatred.
+
+Content that is shared to raise awareness about hate speech, to condemn it, or to educate others about its harms may be allowed, provided the intent is clear and the content does not promote or glorify hate.
+
+Meta enforces these standards through a combination of automated systems and human review. Repeated or severe violations of the hate speech policy may result in the removal of content, temporary restrictions on account functionality, or permanent disabling of accounts.
+
+Meta recognizes the importance of context and may consider factors such as satire, condemnation, or educational intent when evaluating potential hate speech. However, the primary goal is to prevent harm and protect users from exposure to hateful content.
+
+For more information, users are encouraged to review Meta’s full Community Standards and to report any content they believe violates these policies.
