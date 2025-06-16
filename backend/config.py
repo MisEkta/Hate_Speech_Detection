@@ -2,17 +2,15 @@ import os
 from typing import Dict, Any
 from .utils.logging_utils import setup_logging
 import logging
-from dotenv import load_dotenv
 
-load_dotenv()
 setup_logging()
 logger = logging.getLogger(__name__)
 
 class Config:
     # DIAL API Configuration
-    DIAL_API_KEY = os.getenv("your_api_key_here")  # Replace with your actual API key
-    DIAL_ENDPOINT = os.getenv("your_api_endpoint_here")  # Replace with your actual API endpoint
-    DIAL_API_VERSION = os.getenv("your_api_version_here")  # Replace with your actual API version
+    DIAL_API_KEY = "dial-umhniqw84p8dja00xqa41xx776q"
+    DIAL_ENDPOINT = "https://ai-proxy.lab.epam.com"
+    DIAL_API_VERSION = "2024-02-01"
     DEPLOYMENT_NAME = "gpt-4o-mini-2024-07-18"
     EMBEDDING_MODEL = "text-embedding-3-small-1"
     

@@ -30,6 +30,7 @@ async def analyze_text(input_data: TextInput):
         logger.error(f"Error in /analyze endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+    
 @router.get("/health")
 async def health_check():
     """Health check endpoint"""
