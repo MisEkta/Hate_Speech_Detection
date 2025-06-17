@@ -8,17 +8,26 @@ from ..agents.action_agent import ActionRecommenderAgent
 from ..utils.logging_utils import setup_logging
 import logging
 
+# Set up logging for this module
 setup_logging()
 logger = logging.getLogger(__name__)
 
-# Initialize agents
+# Initialize all agents for analysis
 hate_speech_agent = HateSpeechDetectionAgent()
 retriever_agent = HybridRetrieverAgent()
 reasoning_agent = PolicyReasoningAgent()
 action_agent = ActionRecommenderAgent()
 
 def analyze_text_service(text: str, include_policies: bool = True, include_reasoning: bool = True) -> Dict:
-    """Analyze text for hate speech and policy violations"""
+    """
+    Analyze text for hate speech and policy violations.
+    Steps:
+    1. Classify the text.
+    2. Retrieve relevant policies (if requested).
+    3. Generate reasoning (if requested).
+    4. Recommend moderation action.
+    Returns a dictionary with all results.
+    """
     logger.info("Starting analysis service for text input")
     # Step 1: Classification
     classification_result = hate_speech_agent.classify_text(text)

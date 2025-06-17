@@ -1,7 +1,7 @@
 import requests
 
 def check_api_health(api_base_url):
-    """Check if the API is running and healthy."""
+    """Check if the API is running and healthy by hitting the /health endpoint."""
     try:
         response = requests.get(f"{api_base_url}/health")
         return response.status_code == 200
@@ -9,7 +9,10 @@ def check_api_health(api_base_url):
         return False
 
 def analyze_text_api(api_base_url, text, include_policies, include_reasoning):
-    """Send text to the API for analysis."""
+    """
+    Send text to the backend API for hate speech analysis.
+    Returns a dict with success status and either data or error message.
+    """
     try:
         payload = {
             "text": text,
@@ -27,7 +30,10 @@ def analyze_text_api(api_base_url, text, include_policies, include_reasoning):
         return {"success": False, "error": f"Unexpected Error: {str(e)}"}
 
 def analyze_audio_api(api_base_url, audio_bytes, include_policies, include_reasoning):
-    """Send audio file to the API for analysis."""
+    """
+    Send an audio file to the backend API for transcription and hate speech analysis.
+    Returns a dict with success status and either data or error message.
+    """
     try:
         files = {"file": audio_bytes}
         params = {

@@ -9,10 +9,14 @@ import re
 from ..utils.logging_utils import setup_logging
 import logging
 
+# Set up logging for this module
 setup_logging()
 logger = logging.getLogger(__name__)
 
 class HateSpeechDetectionAgent:
+    """
+    Agent for classifying text as Hate, Toxic, Offensive, Neutral, or Ambiguous using Azure OpenAI.
+    """
     def __init__(self):
         self.client = AzureOpenAI(
             api_key=Config.DIAL_API_KEY,
@@ -22,7 +26,10 @@ class HateSpeechDetectionAgent:
         self.error_handler = ErrorHandler()
     
     def classify_text(self, text: str) -> dict:
-        """Classify text as Hate, Toxic, Offensive, Neutral, or Ambiguous"""
+        """
+        Classify text and return label, confidence, and explanation.
+        Uses a prompt to instruct the LLM to return a JSON response.
+        """
         try:
             prompt = f"""
             Analyze the following text and classify it into one of these categories:

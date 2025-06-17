@@ -8,10 +8,14 @@ from backend.config import Config
 from ..utils.logging_utils import setup_logging
 import logging
 
+# Set up logging for this module
 setup_logging()
 logger = logging.getLogger(__name__)
 
 class QdrantOpenAIStore:
+    """
+    Handles storage, retrieval, and search of vector embeddings in Qdrant.
+    """
     def __init__(
         self,
         qdrant_host: str = Config.QDRANT_URL,
@@ -28,6 +32,7 @@ class QdrantOpenAIStore:
         self.metadata_path = os.path.join(storage_path, "metadata.json")
 
         try:
+            # Connect to Qdrant instance
             self.qdrant_client = QdrantClient(host=qdrant_host, port=qdrant_port)
             self.logger.info(f"Successfully connected to Qdrant at {qdrant_host}:{qdrant_port}")
             collections = self.qdrant_client.get_collections()
@@ -37,6 +42,9 @@ class QdrantOpenAIStore:
             raise
 
     def _load_metadata(self) -> Dict[str, Any]:
+        """
+        Load metadata from local storage.
+        """
         if os.path.exists(self.metadata_path):
             try:
                 with open(self.metadata_path, "r") as f:
@@ -46,6 +54,9 @@ class QdrantOpenAIStore:
         return {}
 
     def _save_metadata(self, metadata: Dict[str, Any]):
+        """
+        Save metadata to local storage.
+        """
         try:
             with open(self.metadata_path, "w") as f:
                 json.dump(metadata, f, indent=2)
@@ -54,6 +65,9 @@ class QdrantOpenAIStore:
             raise
 
     def _ensure_collection_exists(self):
+        """
+        Ensure the Qdrant collection exists, create if not.
+        """
         try:
             collections = self.qdrant_client.get_collections()
             collection_names = [c.name for c in collections.collections]
@@ -74,6 +88,9 @@ class QdrantOpenAIStore:
             raise
 
     def upsert_documents(self, points: List[PointStruct]):
+        """
+        Upsert (insert or update) points (embeddings) into the Qdrant collection.
+        """
         try:
             self.qdrant_client.upsert(
                 collection_name=self.collection_name, points=points
@@ -84,6 +101,9 @@ class QdrantOpenAIStore:
             raise
 
     def scroll_documents(self, limit=10000) -> List[Dict[str, Any]]:
+        """
+        Retrieve all documents from the Qdrant collection (up to limit).
+        """
         try:
             response = self.qdrant_client.scroll(
                 collection_name=self.collection_name,
@@ -111,6 +131,10 @@ class QdrantOpenAIStore:
             return []
 
     def search(self, query_embedding, limit: int = 7) -> List[Dict[str, Any]]:
+        """
+        Search for similar documents in Qdrant using a query embedding.
+        Returns a list of matching documents with scores.
+        """
         try:
             search_results = self.qdrant_client.search(
                 collection_name=self.collection_name,
@@ -136,6 +160,9 @@ class QdrantOpenAIStore:
             raise
 
     def delete_collection(self):
+        """
+        Delete the Qdrant collection.
+        """
         try:
             self.qdrant_client.delete_collection(self.collection_name)
             self.logger.info(f"Deleted collection: {self.collection_name}")
@@ -144,6 +171,9 @@ class QdrantOpenAIStore:
             raise
 
     def get_storage_stats(self) -> Optional[Dict[str, Any]]:
+        """
+        Get statistics about the storage and collection.
+        """
         try:
             metadata = self._load_metadata()
             try:
@@ -180,6 +210,10 @@ class QdrantOpenAIStore:
             return None
 
     def optimize_index(self):
+        """
+        Placeholder for index optimization logic.
+        Qdrant handles optimization automatically, but this can be extended.
+        """
         try:
             self.logger.info("Triggering Qdrant collection optimization")
             collection_info = self.qdrant_client.get_collection(self.collection_name)
@@ -201,6 +235,10 @@ class QdrantOpenAIStore:
             raise
 
     def health_check(self) -> Dict[str, Any]:
+        """
+        Check the health of the Qdrant instance and collection.
+        Returns a dict with status and stats.
+        """
         try:
             collections = self.qdrant_client.get_collections()
             qdrant_healthy = True

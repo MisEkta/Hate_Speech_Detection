@@ -5,11 +5,14 @@ from ..agents.error_handler import ErrorHandler
 from ..utils.logging_utils import setup_logging
 import logging
 
+# Set up logging for this module
 setup_logging()
 logger = logging.getLogger(__name__)
 
-
 class PolicyReasoningAgent:
+    """
+    Agent to generate detailed reasoning for a classification decision using LLM.
+    """
     def __init__(self):
         self.client = AzureOpenAI(
             api_key=Config.DIAL_API_KEY,
@@ -19,7 +22,9 @@ class PolicyReasoningAgent:
         self.error_handler = ErrorHandler()
     
     def generate_reasoning(self, text: str, classification: Dict, retrieved_docs: List[Dict]) -> Dict:
-        """Generate detailed reasoning for the classification decision"""
+        """
+        Generate a detailed explanation for the classification, referencing policies and context.
+        """
         try:
             # Prepare context from retrieved documents
             context = self._prepare_context(retrieved_docs)
@@ -60,10 +65,13 @@ class PolicyReasoningAgent:
             }
             
         except Exception as e:
+            # Handle errors gracefully
             return self.error_handler.handle_error(e, "PolicyReasoningAgent.generate_reasoning")
     
     def _prepare_context(self, documents: List[Dict]) -> str:
-        """Prepare context from retrieved documents"""
+        """
+        Prepare a string context from retrieved policy documents for the LLM prompt.
+        """
         context = ""
         for i, doc in enumerate(documents, 1):
             context += f"\n{i}. From {doc['source']}:\n{doc['text']}\n"

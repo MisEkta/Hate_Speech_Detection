@@ -7,10 +7,14 @@ from ..agents.error_handler import ErrorHandler
 from ..utils.logging_utils import setup_logging
 import logging
 
+# Set up logging for this module
 setup_logging()
 logger = logging.getLogger(__name__)
 
 class HybridRetrieverAgent:
+    """
+    Agent to retrieve relevant policy documents using hybrid (vector + LLM) search.
+    """
     def __init__(self):
         self.Qdrant_store = QdrantOpenAIStore()
         self.embedding_generator = EmbeddingGenerator()
@@ -23,7 +27,10 @@ class HybridRetrieverAgent:
         self.error_handler = ErrorHandler()
 
     def retrieve_policies(self, text: str, classification: str) -> Dict:
-        """Retrieve relevant policy documents using hybrid approach"""
+        """
+        Retrieve relevant policy documents using vector search and LLM-enhanced query expansion.
+        Combines and deduplicates results.
+        """
         try:
             # Vector search
             query_embedding = self.embedding_generator.embed_query(text)
@@ -45,10 +52,13 @@ class HybridRetrieverAgent:
             }
 
         except Exception as e:
+            # Handle errors gracefully
             return self.error_handler.handle_error(e, "HybridRetrieverAgent.retrieve_policies")
 
     def _expand_query(self, text: str, classification: str) -> str:
-        """Use LLM to expand query for better retrieval"""
+        """
+        Use LLM to expand the query for better retrieval of relevant policies.
+        """
         try:
             prompt = f"""
             Given this text classified as "{classification}", generate keywords and phrases 
@@ -71,10 +81,13 @@ class HybridRetrieverAgent:
             return response.choices[0].message.content.strip()
 
         except Exception as e:
-            return text  # Fallback to original text
+            # Fallback to original text if LLM fails
+            return text
 
     def _deduplicate_results(self, results: List[Dict]) -> List[Dict]:
-        """Remove duplicate results based on text content"""
+        """
+        Remove duplicate results based on the first 100 characters of text content.
+        """
         seen_texts = set()
         unique_results = []
 

@@ -6,7 +6,7 @@ import pandas as pd
 import io
 import time
 
-# Import page modules
+# Import page modules for navigation
 from pages.text_analysis import render_text_analysis
 from pages.audio_analysis import render_audio_analysis
 from pages.history import render_history
@@ -19,6 +19,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Inject custom CSS for styling the app and result components
 st.markdown("""
 <style>
     .main-header {
@@ -77,19 +79,19 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Session state ---
+# --- Session state initialization ---
 if 'analysis_history' not in st.session_state:
     st.session_state.analysis_history = []
 
-# --- Sidebar Navigation ---
-# --- Sidebar Beautification and Decluttering ---
+# --- Sidebar Navigation and Settings ---
 with st.sidebar:
+    # App title in sidebar
     st.markdown(
         '<div style="font-size:1.3rem;font-weight:700;color:#667eea;margin-bottom:0.5rem;"> Hate Speech Detection</div>',
         unsafe_allow_html=True
     )
 
-    # Navigation in expander
+    # Navigation radio buttons in an expander
     with st.expander("📄 Navigation", expanded=True):
         page = st.radio(
             "Go to page:",
@@ -98,7 +100,7 @@ with st.sidebar:
             label_visibility="collapsed"
         )
 
-    # API Config in expander
+    # API configuration in an expander
     with st.expander("🔗 API Settings", expanded=False):
         API_BASE_URL = st.text_input(
             "API Base URL",
@@ -112,7 +114,7 @@ with st.sidebar:
             st.error("🔴 API Disconnected")
             st.warning("Please ensure your API server is running")
 
-    # Analysis Settings only for analysis pages
+    # Analysis settings for analysis pages
     if page == "Text Analysis" or page == "Audio Analysis":
         with st.expander("⚙️ Analysis Settings", expanded=False):
             include_policies = st.checkbox("📋 Include Policy Retrieval", value=True, key="text_policy1")
@@ -123,7 +125,7 @@ with st.sidebar:
         include_reasoning = True
         auto_analyze = False
 
-    # History controls only for history page
+    # History controls for the history page
     if page == "History":
         with st.expander("📊 History Controls", expanded=False):
             if st.button("🗑️ Clear History"):
@@ -132,6 +134,7 @@ with st.sidebar:
             if st.session_state.analysis_history:
                 st.write(f"Total analyses: {len(st.session_state.analysis_history)}")
 
+# Utility function to get CSS class for classification label
 def get_classification_style(label: str) -> str:
     if label.lower() in ['safe', 'not a hate speech']:
         return "classification-safe"
@@ -140,6 +143,7 @@ def get_classification_style(label: str) -> str:
     else:
         return "classification-offensive"
 
+# Utility function to create a confidence gauge chart
 def create_confidence_chart(classification_data):
     if 'confidence' in classification_data:
         confidence = classification_data['confidence']
@@ -177,7 +181,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- Page Routing ---
+# --- Page Routing: Render the selected page ---
 if page == "Text Analysis":
     render_text_analysis(
         api_status, include_policies, include_reasoning, auto_analyze,

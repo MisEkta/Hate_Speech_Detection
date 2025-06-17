@@ -2,10 +2,10 @@ import streamlit as st
 import speech_recognition as sr
 from api_client import analyze_text_api
 from datetime import datetime
-# from app import get_classification_style, create_confidence_chart  # Make sure to import these
 
+# Function to record and transcribe voice input from the user's microphone
 def record_voice_input() -> str:
-    """Record and transcribe voice input"""
+    """Record and transcribe voice input using the microphone."""
     recognizer = sr.Recognizer()
     try:
         with sr.Microphone() as source:
@@ -25,7 +25,12 @@ def record_voice_input() -> str:
         st.error(f"❌ Error accessing microphone: {str(e)}")
     return None
 
+# Function to determine the CSS class for classification result styling
 def get_classification_style(label: str) -> str:
+    """
+    Returns a CSS class name based on the classification label.
+    Used for coloring the result bar in the UI.
+    """
     if label.lower() in ['safe', 'not a hate speech']:
         return "classification-safe"
     elif label.lower() in ['hate speech', 'hate']:
@@ -33,7 +38,11 @@ def get_classification_style(label: str) -> str:
     else:
         return "classification-offensive"
 
+# Function to create a confidence gauge chart using Plotly
 def create_confidence_chart(classification_data):
+    """
+    Creates a Plotly gauge chart to visualize the confidence score of the classification.
+    """
     import plotly.graph_objects as go
     if 'confidence' in classification_data:
         confidence = classification_data['confidence']
@@ -63,24 +72,36 @@ def create_confidence_chart(classification_data):
         return fig
     return None
 
+# Main function to render the audio analysis page in Streamlit
 def render_audio_analysis():
+    """
+    Renders the Audio Analysis page in the Streamlit app.
+    Allows users to record audio, transcribe it, and analyze the transcribed text for hate speech.
+    Displays results, reasoning, policies, and stores the analysis in session history.
+    """
     st.header("🎤 Audio Analysis")
     st.info("You can record your voice and transcribe it in real time below.")
 
+    # Retrieve API and analysis settings from session state
     API_BASE_URL = st.session_state.get("API_BASE_URL", "http://localhost:8000")
     include_policies = st.session_state.get("include_policies", True)
     include_reasoning = st.session_state.get("include_reasoning", True)
 
+    # Button to record voice and transcribe
     if st.button("🎙️ Record Voice"):
         text = record_voice_input()
         if text:
             st.session_state["audio_transcribed_text"] = text
 
+    # Retrieve the last transcribed text from session state
     transcribed = st.session_state.get("audio_transcribed_text", "")
     if transcribed:
+        # Display the transcribed text in a text area
         st.text_area("Transcribed Text", value=transcribed, height=100)
+        # Button to analyze the transcribed text
         if st.button("🔍 Analyze Transcribed Text"):
             with st.spinner("Analyzing..."):
+                # Call the backend API to analyze the transcribed text
                 result = analyze_text_api(API_BASE_URL, transcribed, include_policies, include_reasoning)
             if result["success"]:
                 data = result["data"]
@@ -89,6 +110,7 @@ def render_audio_analysis():
                 confidence = classification.get("confidence", 0)
                 style_class = get_classification_style(label)
                 st.header("🎯 Analysis Results")
+                # Show the classification result with styled box
                 st.markdown(f"""
                 <div class="{style_class}">
                     <h3>Classification: {label}</h3>
@@ -96,19 +118,19 @@ def render_audio_analysis():
                 </div>
                 """, unsafe_allow_html=True)
 
-                # Confidence chart
+                # Show the confidence chart if available
                 confidence_chart = create_confidence_chart(classification)
                 if confidence_chart:
                     col1, col2, col3 = st.columns([1, 2, 1])
                     with col2:
                         st.plotly_chart(confidence_chart, use_container_width=True)
 
-                # Classification details
+                # Show classification details if available
                 if "details" in classification:
                     with st.expander("📋 Classification Details"):
                         st.json(classification["details"])
 
-                # Policies
+                # Show relevant policies if available
                 if "retrieved_policies" in data and data["retrieved_policies"]:
                     st.header("📚 Relevant Policies")
                     for i, policy in enumerate(data["retrieved_policies"], 1):
@@ -125,7 +147,7 @@ def render_audio_analysis():
                             </div>
                             """, unsafe_allow_html=True)
 
-                # Reasoning
+                # Show AI reasoning if available
                 if "reasoning" in data and data["reasoning"]:
                     st.header("🧠 AI Reasoning")
                     st.markdown(f"""
@@ -134,7 +156,7 @@ def render_audio_analysis():
                     </div>
                     """, unsafe_allow_html=True)
 
-                # Recommended actions
+                # Show recommended actions if available
                 if "recommended_action" in data and data["recommended_action"]:
                     st.header("⚡ Recommended Actions")
                     action_data = data["recommended_action"]
@@ -149,14 +171,14 @@ def render_audio_analysis():
                         with st.expander("Action Details"):
                             st.write(action_data["details"])
 
-                # Metadata
+                # Show analysis metadata
                 with st.expander("ℹ️ Analysis Metadata"):
                     st.write(f"**Timestamp:** {data['timestamp']}")
                     st.write(f"**Text Length:** {len(transcribed)} characters")
                     st.write(f"**Policies Retrieved:** {'Yes' if include_policies else 'No'}")
                     st.write(f"**Reasoning Generated:** {'Yes' if include_reasoning else 'No'}")
 
-                # --- Store in history ---
+                # Store the analysis result in session history for download and review
                 if "analysis_history" not in st.session_state:
                     st.session_state.analysis_history = []
                 st.session_state.analysis_history.append({

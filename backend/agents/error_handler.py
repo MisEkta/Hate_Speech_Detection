@@ -4,16 +4,23 @@ import traceback
 from ..utils.logging_utils import setup_logging
 import logging
 
+# Set up logging for this module
 setup_logging()
 logger = logging.getLogger(__name__)
 
 class ErrorHandler:
+    """
+    Handles errors and provides user-friendly error messages for agents.
+    """
     def __init__(self):
         logging.basicConfig(level=logging.ERROR)
         self.logger = logging.getLogger(__name__)
     
     def handle_error(self, error: Exception, context: str) -> Dict[str, Any]:
-        """Handle errors gracefully and return user-friendly messages"""
+        """
+        Handle errors gracefully and return user-friendly messages.
+        Logs the error and returns a structured error response.
+        """
         self.logger.error(f"Error in {context}: {str(error)}")
         self.logger.error(f"Traceback: {traceback.format_exc()}")
         

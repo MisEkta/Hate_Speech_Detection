@@ -6,17 +6,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .api.api_main import router as analyze_router  # <-- Import the router
 
-# Initialize logging
+# Initialize logging for the backend
 setup_logging()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Create FastAPI app instance with metadata
 app = FastAPI(
     title="Hate Speech Detection API",
     description="API for hate speech detection and policy retrieval",
     version="1.0.0"
 )
 
+# Enable CORS for all origins (for frontend-backend communication)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,7 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
+# Register API routers (endpoints)
 app.include_router(analyze_router)  # <-- Use the router, not the function
 
 @app.get("/", tags=["root"])
