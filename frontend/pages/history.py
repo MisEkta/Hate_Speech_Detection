@@ -23,7 +23,8 @@ def render_history():
                 "Timestamp": item["timestamp"],
                 "Text": item["text"],
                 "Classification": item["classification"].get("label", "Unknown"),
-                "Confidence": item["classification"].get("confidence", 0)
+                "Confidence": item["classification"].get("confidence", 0),
+                "Source": item.get("source", "Text")  # <-- Add this line, default to Text
             }
             for item in st.session_state.analysis_history
         ])
@@ -42,6 +43,7 @@ def render_history():
             for i, item in enumerate(reversed(st.session_state.analysis_history[-10:]), 1):
                 st.markdown(f"""
                 **Analysis {i}** - {datetime.fromisoformat(item['timestamp']).strftime('%Y-%m-%d %H:%M:%S')}
+                - **Source:** {item.get('source', 'Text')}
                 - **Text:** {item['text']}
                 - **Classification:** {item['classification'].get('label', 'Unknown')}
                 - **Confidence:** {item['classification'].get('confidence', 0):.1%}

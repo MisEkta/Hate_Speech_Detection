@@ -133,7 +133,7 @@ with st.sidebar:
                 st.write(f"Total analyses: {len(st.session_state.analysis_history)}")
 
 def get_classification_style(label: str) -> str:
-    if label.lower() in ['safe', 'not hate speech']:
+    if label.lower() in ['safe', 'not a hate speech']:
         return "classification-safe"
     elif label.lower() in ['hate speech', 'hate']:
         return "classification-hate"

@@ -40,7 +40,8 @@ def render_text_analysis(
             st.session_state.analysis_history.append({
                 "text": text_input[:100] + "..." if len(text_input) > 100 else text_input,
                 "timestamp": datetime.now().isoformat(),
-                "classification": data["classification"]
+                "classification": data["classification"],
+                "source": "Text"  # <-- Add this line
             })
             st.header("🎯 Analysis Results")
             classification = data["classification"]
